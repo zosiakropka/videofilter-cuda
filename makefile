@@ -1,41 +1,52 @@
-FLAGS=-Wall
-OCV_FLAGS=-lopencv_highgui -lopencv_core -L/usr/local/lib
-
-FILTERS=tiltshift.o blur.o sharpen.o resize.o mask.o filter.o # @TODO: add missing
-
 all: filtry_gpu
 
-filtry_gpu: src/main.cpp utils.o $(FILTERS)
-	g++ src/main.cpp utils.o $(FILTERS) $(FLAGS) $(OCV_FLAGS) -o filtry_gpu
+FLAGS=#-Wall
+OCV_FLAGS=-lopencv_highgui -lopencv_core -L/usr/local/lib
+CUDA:=$(shell nvcc --version 2> /dev/null)
+FILTERS=tiltshift.o blur.o sharpen.o resize.o mask.o filter.o
 
-utils.o: src/utils.cpp
-	gcc src/utils.cpp $(OCV_FLAGS) -c -o utils.o
-
-filter.o: src/filter.cpp
-	gcc src/filter.cpp -c -o filter.o
-
-# filters
+CPU_DEPENDENCIES=utils.o $(FILTERS)
 
 ifdef CUDA
+DEPENDENCIES=$(CPU_DEPENDENCIES) gpu.o
+CUDA_FLAGS=-L/usr/local/cuda/lib* -lcudart -lcuda
 DIR=gpu
 EXT=cu
 COMPILER=nvcc
+CUDA=-DCUDA=1
 else
+DEPENDENCIES=$(CPU_DEPENDENCIES)
 DIR=cpu
 EXT=cpp
-COMPILER=gcc
+COMPILER=g++
+CUDA=-DCUDA=0
 endif
+
+filtry_gpu: src/main.cpp $(DEPENDENCIES)
+	g++ src/main.cpp $(DEPENDENCIES) $(FLAGS) $(OCV_FLAGS) $(CUDA_FLAGS) -o filtry_gpu
+
+utils.o: src/utils.cpp
+	$(COMPILER) src/utils.cpp -c -o utils.o
+
+filter.o: src/filter.cpp
+	$(COMPILER) src/filter.cpp $(CUDA) -c -o filter.o
+
+gpu.o: $(DIR)/gpu.$(EXT)
+	$(COMPILER) $(DIR)/gpu.$(EXT) $(CUDA) -c -o gpu.o
+
 tiltshift.o: $(DIR)/tiltshift.$(EXT)
-	$(COMPILER) $(DIR)/tiltshift.$(EXT) -c -o tiltshift.o
+	$(COMPILER) $(DIR)/tiltshift.$(EXT) $(CUDA) -c -o tiltshift.o
 resize.o: $(DIR)/resize.$(EXT)
-	$(COMPILER) $(DIR)/resize.$(EXT) -c -o resize.o
+	$(COMPILER) $(DIR)/resize.$(EXT) $(CUDA) -c -o resize.o
 mask.o: $(DIR)/mask.$(EXT)
-	$(COMPILER) $(DIR)/mask.$(EXT) -c -o mask.o
+	$(COMPILER) $(DIR)/mask.$(EXT) $(CUDA) -c -o mask.o
 sharpen.o: src/sharpen.cpp
-	gcc src/sharpen.cpp -c -o sharpen.o
+	$(COMPILER) src/sharpen.cpp $(CUDA) -c -o sharpen.o
 blur.o: src/blur.cpp
-	gcc src/blur.cpp -c -o blur.o
+	$(COMPILER) src/blur.cpp $(CUDA) -c -o blur.o
 
 clean:
 	-rm -rf *.o
 	-rm -f filtry_gpu
+
+rebuild: clean all
