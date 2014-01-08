@@ -24,46 +24,48 @@ using cv::VideoWriter;
 int main(int argc, char** argv) {
 
 
-    char* f_in;
-    char* f_out;
-    int threads;
+  char* f_in;
+  char* f_out;
+  int threads;
 
-    parse_params(argc, argv, &threads, &f_in, &f_out);
+  parse_params(argc, argv, &threads, &f_in, &f_out);
 
-    Filter filter_id = select_filter();
+  Filter filter_id = select_filter();
 
-    double ratio = 1.5;
+  double ratio = 2;
 
-    VideoCapture v_in(f_in);
-    test(v_in.isOpened(), "open", f_in);
-    VideoProperties p = grab_video_properties(v_in);
-    VideoWriter v_out;
+  VideoCapture v_in(f_in);
+  test(v_in.isOpened(), "open", f_in);
+  VideoProperties p = grab_video_properties(v_in);
+  VideoWriter v_out;
 
-    if (filter_id == RESIZE) {
-        p.frame_size.width = (int) (ratio * (double) (p.frame_size.width));
-        p.frame_size.height = (int) (ratio * (double) (p.frame_size.height));
-    }
+  if (filter_id == RESIZE) {
+    p.frame_size.width = (int) (ratio * (double) (p.frame_size.width));
+    p.frame_size.height = (int) (ratio * (double) (p.frame_size.height));
+  }
 
-    v_out.open(f_out, p.fourcc, p.fps, p.frame_size, p.is_color);
+  v_out.open(f_out, p.fourcc, p.fps, p.frame_size, p.is_color);
 
-    VideoFilter* filter;
-    test(v_out.isOpened(), "open", f_out);
-    switch (filter_id) {
-        case NONE:
-            break;
-        case BLUR: filter = new BlurFilter;
-            break;
-        case SHARPEN: filter = new SharpenFilter;
-            break;
-        case RESIZE: filter = new ResizeFilter;
-            filter->set_ratio(ratio);
-            break;
-        case TILTSHIFT: filter = new TiltshiftFilter;
-            break;
-    }
+  VideoFilter* filter;
+  test(v_out.isOpened(), "open", f_out);
+  switch (filter_id) {
+    case NONE:
+      break;
+    case BLUR: filter = new BlurFilter;
+      break;
+    case SHARPEN: filter = new SharpenFilter;
+      break;
+    case RESIZE: filter = new ResizeFilter;
+      filter->set_ratio(ratio);
+      break;
+    case TILTSHIFT: filter = new TiltshiftFilter;
+      break;
+  }
 
-    filter->filter(v_in, v_out);
+  filter->set_threads(threads);
 
-    return 0;
+  filter->filter(v_in, v_out);
+
+  return 0;
 }
 
