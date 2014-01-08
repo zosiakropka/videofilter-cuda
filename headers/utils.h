@@ -21,11 +21,11 @@ using cv::VideoWriter;
 using cv::Size;
 
 enum Filter {
-    NONE,
-    SHARPEN,
-    BLUR,
-    RESIZE,
-    TILTSHIFT,
+  NONE,
+  SHARPEN,
+  BLUR,
+  RESIZE,
+  TILTSHIFT,
 };
 
 const uint FILTERS_COUNT = 4;
@@ -37,10 +37,10 @@ void parse_params(int argc, char** argv, int* threads, char** f_in, char** f_out
 void test(bool success, const char* subject = "unknown", const char* file = NULL);
 
 struct VideoProperties {
-    int fourcc;
-    double fps;
-    Size frame_size;
-    bool is_color;
+  int fourcc;
+  double fps;
+  Size frame_size;
+  bool is_color;
 };
 
 VideoProperties grab_video_properties(VideoCapture capture);
